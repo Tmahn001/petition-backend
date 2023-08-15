@@ -9,9 +9,9 @@ router.register(r'petitions', PetitionViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('petitions/<uuid:petition_id>/authenticated_sign/', SignatureViewSet.as_view({'post': 'perform_create_for_authenticated'}), name='authenticated-sign'),
-    path('petitions/<uuid:petition_id>/sign_anonymously/', SignatureViewSet.as_view({'post': 'sign_anonymously'}), name='sign-anonymously'),
+    path('petitions/<uuid:petition_id>/sign/', SignatureViewSet.as_view({'post': 'sign'}), name='sign-petition'),
 ]
+
 
 
 

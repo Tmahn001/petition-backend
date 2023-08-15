@@ -1,11 +1,10 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from .models import Petition, Signature
 from .serializers import PetitionSerializer, SignatureSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny, BasePermission
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 from accounts.models import CustomUser
-
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 
@@ -16,6 +15,12 @@ class PetitionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.queryset.filter(creator=self.request.user)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 class AllowUnauthenticated(BasePermission):
     """
@@ -27,7 +32,7 @@ class AllowUnauthenticated(BasePermission):
             return True
         return request.user and request.user.is_authenticated
 
-class SignatureViewSet(viewsets.ModelViewSet):
+''''class SignatureViewSet(viewsets.ModelViewSet):
     queryset = Signature.objects.all()
     serializer_class = SignatureSerializer
     permission_classes = [AllowUnauthenticated | IsAuthenticated]
@@ -61,6 +66,45 @@ class SignatureViewSet(viewsets.ModelViewSet):
             'student_email': student_email
         })
         
+        if serializer.is_valid():
+            serializer.save(petition=petition)
+            return Response(serializer.data, status=201)
+        else:
+            return Response(serializer.errors, status=400)'''
+class SignatureViewSet(viewsets.ModelViewSet):
+    queryset = Signature.objects.all()
+    serializer_class = SignatureSerializer
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def sign(self, request, petition_id):
+        petition = get_object_or_404(Petition, id=petition_id)
+        
+        if request.user.is_authenticated:
+            serializer = SignatureSerializer(data={
+                'petition': petition_id,
+                'signer_name': request.user.first_name + ' ' + request.user.last_name,
+                'student_email': request.user.email,
+            })
+        else:
+            serializer = SignatureSerializer(data={
+                'petition': petition_id,
+                'signer_name': request.data.get('signer_name'),
+                'student_email': request.data.get('student_email'),
+            })
+
+        if serializer.is_valid():
+            serializer.save(petition=petition)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def perform_create_for_unauthenticated(self, request, petition_id):
+        petition = get_object_or_404(Petition, id=petition_id)
+        serializer = SignatureSerializer(data={
+            'petition': petition_id,
+            'signer_name': request.data.get('signer_name'),
+            'student_email': request.data.get('student_email'),
+        })
         if serializer.is_valid():
             serializer.save(petition=petition)
             return Response(serializer.data, status=201)

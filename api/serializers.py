@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Petition, Signature, InvolvedParty
+from drf_extra_fields.fields import Base64ImageField, Base64FileField
 
 class SignatureSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,10 +22,11 @@ class InvolvedPartySerializer(serializers.ModelSerializer):
 class PetitionSerializer(serializers.ModelSerializer):
     involved_parties = InvolvedPartySerializer(many=True, read_only=True)
     signatures = SignatureSerializer(many=True, read_only=True)
+    image = Base64ImageField(required=False)
 
     class Meta:
         model = Petition
-        fields = ['id', 'title', 'description', 'created_at', 'creator', 'signatures','involved_parties', 'required_signatures_range']
+        fields = ['id', 'title', 'description', 'created_at', 'creator', 'signatures','involved_parties', 'required_signatures_range', 'image']
         read_only_fields = ['created_at', 'creator']
 
     

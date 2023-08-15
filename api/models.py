@@ -17,6 +17,8 @@ class Petition(models.Model):
         related_name='entities',
     )
     required_signatures_range = models.PositiveIntegerField(default=0)
+    image= models.ImageField(upload_to='media/images/',null=True, blank=True)
+    
 
     def __str__(self):
         return self.title
