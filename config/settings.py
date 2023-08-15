@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -69,7 +70,7 @@ SIMPLE_JWT = {
 
     # Configure the authentication class used for obtaining an access token.
     # 'Token' authentication is recommended as it is simpler and stateless.
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.authentication.TokenAuthentication',),
+ 
 
     # Enable the "AUTH_COOKIE" setting to use a secure HTTP-only cookie for
     # storing the access token. This helps protect against CSRF attacks.
@@ -118,11 +119,10 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'config.urls'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 100 ,
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
+    ),
     
 }
 
@@ -145,8 +145,24 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 #Cors
-CORS_ALLOW_ALL_ORIGINS = True
+#CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ORIGINS = [
+    "http://localhost:3000",  # Adjust this to match your frontend's origin
+]
 
+# Allow credentials and set specific headers
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 #User account
 AUTH_USER_MODEL = 'accounts.CustomUser'
 AUTHENTICATION_BACKENDS = ['accounts.auth_backends.EmailBackend']

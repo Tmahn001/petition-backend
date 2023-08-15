@@ -5,9 +5,14 @@ from .views import PetitionViewSet, SignatureViewSet
 # Create a router and register viewsets
 router = DefaultRouter()
 router.register(r'petitions', PetitionViewSet)
-router.register(r'signatures', SignatureViewSet)
 
-# The API URLs are now determined automatically by the router
+
 urlpatterns = [
     path('', include(router.urls)),
+    path('petitions/<uuid:petition_id>/authenticated_sign/', SignatureViewSet.as_view({'post': 'perform_create_for_authenticated'}), name='authenticated-sign'),
+    path('petitions/<uuid:petition_id>/sign_anonymously/', SignatureViewSet.as_view({'post': 'sign_anonymously'}), name='sign-anonymously'),
 ]
+
+
+
+
