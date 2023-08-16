@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from accounts.models import CustomUser
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
 
 class PetitionViewSet(viewsets.ModelViewSet):
     queryset = Petition.objects.all()
@@ -32,45 +33,6 @@ class AllowUnauthenticated(BasePermission):
             return True
         return request.user and request.user.is_authenticated
 
-''''class SignatureViewSet(viewsets.ModelViewSet):
-    queryset = Signature.objects.all()
-    serializer_class = SignatureSerializer
-    permission_classes = [AllowUnauthenticated | IsAuthenticated]
-
-    def perform_create(self, serializer, petition_id):
-        #petition_id = self.request.data.get('petition')
-        petition = get_object_or_404(Petition, id=petition_id)
-        serializer.save(signer=self.request.user, petition=petition)
-
-    def perform_create_for_authenticated(self, serializer, petition_id):
-        petition = get_object_or_404(Petition, id=petition_id)
-        if self.request.user.is_authenticated:
-            serializer.save(signer=self.request.user, petition=petition)
-        else:
-            return Response({"error": "Authentication required"}, status=401)
-
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def sign_anonymously(self, request, petition_id):
-        #petition_id = self.request.data.get('petition')
-        print(petition_id)
-        petition = get_object_or_404(Petition, id=petition_id)
-        signer_name = request.data.get('signer_name')
-        student_email = request.data.get('student_email')
-
-        if CustomUser.objects.filter(email=student_email).exists():
-            return Response({"error": "Email is already registered"}, status=400)
-        
-        serializer = SignatureSerializer(data={
-            'petition': petition_id,
-            'signer_name': signer_name,
-            'student_email': student_email
-        })
-        
-        if serializer.is_valid():
-            serializer.save(petition=petition)
-            return Response(serializer.data, status=201)
-        else:
-            return Response(serializer.errors, status=400)'''
 class SignatureViewSet(viewsets.ModelViewSet):
     queryset = Signature.objects.all()
     serializer_class = SignatureSerializer
@@ -110,3 +72,59 @@ class SignatureViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=201)
         else:
             return Response(serializer.errors, status=400)
+
+
+'''class UserDetailsView(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        #user_id = kwargs.get('user_id')
+        try:
+            user = CustomUser.objects.get(id=request.user.id)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        petitions_created = Petition.objects.filter(creator=user)
+        signed_petitions = Petition.objects.filter(signatures__student_email=request.user.email)
+
+        user_data = {
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'petitions_created': PetitionSerializer(petitions_created, many=True).data,
+            'total_petitions_created': petitions_created.count(),
+            'signed_petitions': PetitionSerializer(signed_petitions, many=True).data,
+            'total_signed_petitions': signed_petitions.count(),
+        }
+
+        return Response(user_data)'''
+
+class UserDetailsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            user = CustomUser.objects.get(id=request.user.id)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        petitions_created = Petition.objects.filter(creator=user)
+        signed_petitions = Petition.objects.filter(signature__student_email__isnull=False)
+
+        user_data = {
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'petitions_created': [
+                {
+                    'petition': PetitionSerializer(petition).data,
+                    'total_signatures': petition.signatures.count(),
+                }
+                for petition in petitions_created
+            ],
+            'total_petitions_created': petitions_created.count(),
+            
+        }
+
+        return Response(user_data)
